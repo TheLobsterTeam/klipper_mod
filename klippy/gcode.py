@@ -115,8 +115,8 @@ class GCodeDispatch:
         # A "traditional" g-code command is a letter and followed by a number
         try:
             cmd = cmd.upper().split()[0]
-            val = float(cmd[1:])
-            return cmd[0].isupper() and cmd[1].isdigit()
+            # val = float(cmd[1:])
+            return cmd[0].isupper() and (len(cmd) == 1 or cmd[1].isdigit()) #Accept single leter gcodes
         except:
             return False
     def register_command(self, cmd, func, when_not_ready=False, desc=None):
@@ -192,8 +192,12 @@ class GCodeDispatch:
             params = { parts[i]: parts[i+1].strip()
                        for i in range(1, numparts, 2) }
             gcmd = GCodeCommand(self, cmd, origline, params, need_ack)
+
             # Invoke handler for command
             handler = self.gcode_handlers.get(cmd, self.cmd_default)
+            if handler == self.cmd_default and len(params.keys()) == 1 and len(params.keys()[0]) == 1:  # Check if single letter gcode
+                handler = self.gcode_handlers.get(cmd[0], self.cmd_default)
+
             try:
                 handler(gcmd)
             except self.error as e:
